@@ -1,0 +1,39 @@
+{
+ "school": "الكلية الإكليريكية اللاهوتية بالإسكندرية",
+ "program": "دبلوم الطلبة · السنة الأولى",
+ "subjects": [
+  {
+   "id": "church-history",
+   "title": "تاريخ الكنيسة (١)",
+   "sub": "الكنيسة الأولى في العصر الروماني",
+   "teacher": "أ. ميلاد نبيل",
+   "color": "#6D2E26",
+   "icon": "church",
+   "ready": true
+  },
+  {
+   "id": "new-testament",
+   "title": "العهد الجديد",
+   "sub": "قريبًا",
+   "color": "#3F6F7E",
+   "icon": "book",
+   "ready": false
+  },
+  {
+   "id": "old-testament",
+   "title": "العهد القديم",
+   "sub": "قريبًا",
+   "color": "#B98322",
+   "icon": "scroll",
+   "ready": false
+  },
+  {
+   "id": "dogmatic-theology",
+   "title": "اللاهوت العقيدي",
+   "sub": "قريبًا",
+   "color": "#9C563B",
+   "icon": "cross",
+   "ready": false
+  }
+ ]
+}
