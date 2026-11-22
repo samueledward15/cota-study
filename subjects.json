@@ -21,11 +21,12 @@
   },
   {
    "id": "old-testament",
-   "title": "العهد القديم",
-   "sub": "قريبًا",
+   "title": "العهد القديم (١)",
+   "sub": "بانوراما العهد القديم وأسفار موسى الخمسة",
+   "teacher": "أبونا كيرلس رشدي",
    "color": "#B98322",
    "icon": "scroll",
-   "ready": false
+   "ready": true
   },
   {
    "id": "dogmatic-theology",

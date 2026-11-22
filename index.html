@@ -490,7 +490,7 @@ let P={done:{},ans:{},box:{}}; // progress of the open subject
 const prog=id=>S.subj[id]||(S.subj[id]={done:{},ans:{},box:{}});
 
 /* ================= data ================= */
-let SUBJ,M,C,L={},SID=null;const CACHE={};
+let SUBJ,M,M0,C,L={},SID=null;const CACHE={};
 const j=u=>fetch(u).then(r=>{if(!r.ok)throw new Error(u);return r.json()});
 const META=()=>SUBJ.subjects.find(x=>x.id===SID);
 const H=v=>`#/${SID}${v?'/'+v:''}`; // link inside the open subject
@@ -499,8 +499,8 @@ async function openSubject(id){
   if(SID===id)return true;
   const meta=SUBJ.subjects.find(x=>x.id===id);if(!meta||!meta.ready)return false;
   if(!CACHE[id]){const base=`subjects/${id}/`;const c=await j(base+'course.json');const l={};
-    await Promise.all(c.lectures.filter(x=>x.ready).map(async x=>{l[x.n]=await j(`${base}lec${x.n}.json`)}));CACHE[id]={c,l}}
-  SID=id;C=CACHE[id].c;L=CACHE[id].l;P=prog(id);
+    await Promise.all(c.lectures.filter(x=>x.ready).map(async x=>{l[x.n]=await j(`${base}lec${x.n}.json`)}));CACHE[id]={c,l,m:c.map?await j(base+c.map):null}}
+  SID=id;C=CACHE[id].c;L=CACHE[id].l;M=CACHE[id].m||M0;P=prog(id);
   ['practice','cards','map','timeline'].forEach(k=>{if(R[k])for(const p of ['lecs','types','deck','key','cur','sel'])delete R[k][p]});
   $('#brandT').textContent=meta.title;$('#brandS').textContent=C.teacher||SUBJ.school;$('#foot').textContent=`${meta.title} · ${C.teacher||''} · ${SUBJ.school}`;
   document.title=`${meta.title} · مذاكرة الإكليريكية`;
@@ -621,7 +621,7 @@ R.home=()=>{
   <div class="sec-h"><h2>المحاضرات</h2></div>
   <div class="lecs">${C.lectures.map((l,i)=>{const ok=!!L[l.n],p=lecProgress(l.n);
     return `<a class="lec ${ok?'':'soon'}" style="--c:${LC[i]}" href="${ok?H('lecture-'+l.n):'javascript:void 0'}" ${ok?'':'aria-disabled="true"'} data-soon="${ok?0:1}">
-      <span class="num">${ar(l.n)}</span>
+      <span class="num"${l.num&&l.num.length>2?' style="font-size:11px"':''}>${l.num||ar(l.n)}</span>
       <span style="flex:1;min-width:0"><h3>${esc(l.title)}</h3>
       <span class="m"><span>${esc(l.span)}</span><span>ص ${esc(l.pages)}</span>${ok?`<span>${ar(Math.round(p*100))}٪</span>`:'<span>قريبًا</span>'}</span>
       ${ok?`<div class="bar"><i style="width:${p*100}%"></i></div>`:''}</span></a>`}).join('')}</div>
@@ -751,7 +751,7 @@ function drawMap(el,cfg,kind){
   }
   el.innerHTML=`<div class="mt">${cfg.title}</div>
   <svg class="mapsvg" viewBox="${vb.join(' ')}" role="img" aria-label="${esc(cfg.title)}"><rect x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="#DCE4E0"/>
-  <path class="land" d="${M.land}" style="stroke-width:${.8*s}"/>${type==='pins'?`<text class="sea" x="${k('crete').x}" y="${k('crete').y+60}" font-size="${14*s}" text-anchor="middle">البحر المتوسط</text>`:''}${body}</svg>
+  <path class="land" d="${M.land}" style="stroke-width:${.8*s}"/>${type==='pins'&&M.places.crete?`<text class="sea" x="${k('crete').x}" y="${k('crete').y+60}" font-size="${14*s}" text-anchor="middle">البحر المتوسط</text>`:''}${body}</svg>
   <div class="legend">${legend}</div>`;
   const draw=()=>{const jp=$('.jp',el);if(!jp)return;const len=jp.getTotalLength();jp.style.setProperty('--len',len);jp.classList.remove('draw');void jp.getBBox();jp.classList.add('draw')};draw();
   $$('[data-replay]',el).forEach(b=>b.onclick=draw);
@@ -945,7 +945,7 @@ R.cards=()=>{
 };
 
 /* ================= boot ================= */
-Promise.all([j('subjects.json'),j('map.json')]).then(([a,b])=>{SUBJ=a;M=b;route()}).catch(e=>{$('#main').innerHTML=`<div class="empty">حصلت مشكلة في تحميل المحتوى. جرّب تعمل تحديث للصفحة.</div>`;console.error(e)});
+Promise.all([j('subjects.json'),j('map.json')]).then(([a,b])=>{SUBJ=a;M0=M=b;route()}).catch(e=>{$('#main').innerHTML=`<div class="empty">حصلت مشكلة في تحميل المحتوى. جرّب تعمل تحديث للصفحة.</div>`;console.error(e)});
 if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body>
