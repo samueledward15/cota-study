@@ -13,11 +13,11 @@
   },
   {
    "id": "new-testament",
-   "title": "العهد الجديد",
-   "sub": "قريبًا",
+   "title": "العهد الجديد (١)",
+   "sub": "الأناجيل والأعمال والرسائل الجامعة",
    "color": "#3F6F7E",
    "icon": "book",
-   "ready": false
+   "ready": true
   },
   {
    "id": "old-testament",
