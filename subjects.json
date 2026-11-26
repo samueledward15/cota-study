@@ -30,11 +30,11 @@
   },
   {
    "id": "dogmatic-theology",
-   "title": "اللاهوت العقيدي",
-   "sub": "قريبًا",
+   "title": "اللاهوت العقيدي (١)",
+   "sub": "التوحيد والتثليث",
    "color": "#9C563B",
    "icon": "cross",
-   "ready": false
+   "ready": true
   }
  ]
 }
