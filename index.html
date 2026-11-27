@@ -284,6 +284,13 @@ figcaption{font-family:var(--f-ui);font-size:13px;color:var(--muted);text-align:
 .mode b{display:block;color:var(--ink);font-size:16px}
 .mode span{font-size:13px;color:var(--muted);line-height:1.5;display:block}
 .tgrid{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}
+.tdet{border:1px solid var(--line);border-radius:12px;margin:0 0 8px;background:var(--raised)}
+.tdet summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;font-family:var(--f-ui);font-weight:600;font-size:14px;color:var(--ink)}
+.tdet summary::-webkit-details-marker{display:none}
+.tdet summary::after{content:'▾';color:var(--umber);transition:transform .2s}.tdet[open] summary::after{transform:rotate(180deg)}
+.tdet .tgrid{padding:0 12px 4px;margin:0 0 10px}
+.tcnt{margin-inline-start:auto;background:var(--crimson);color:#fff;border-radius:999px;font-size:12px;padding:1px 8px}
+.tpill{text-align:start;line-height:1.5}.tpill small{opacity:.7}
 .lbl-s{font-family:var(--f-ui);font-weight:700;font-size:13px;color:var(--umber);margin:8px 0 2px}
 
 /* quiz */
@@ -512,7 +519,12 @@ function prefetch(){ // warm the offline cache with this subject's images
   for(const l of Object.values(L))JSON.stringify(l).replace(/"(subjects\/[^"]+\.(?:webp|png|jpg|svg))"/g,(_,u)=>imgs.add(u));
   setTimeout(()=>imgs.forEach(u=>fetch(u).catch(()=>{})),2500);
 }
-function allQ(lecs){const out=[];for(const n of lecs){(L[n]?.quiz||[]).forEach((q,i)=>out.push({...q,id:`${n}-${i}`,lec:n}))}return out}
+// topic (section) of a question = the section whose page range holds the question's page
+const pnum=s=>(String(s??'').replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).match(/\d+/g)||[]).map(Number);
+function topicOf(n,q){const secs=L[n]?.sections||[];const p=pnum(q.p)[0];let cand=null;
+  if(p!=null)for(const s of secs){const v=pnum(s.page);if(!v.length)continue;if(v[0]<=p&&p<=v[v.length-1])return s.id;if(v[0]<=p)cand=s.id}
+  return cand||secs[0]?.id}
+function allQ(lecs){const out=[];for(const n of lecs){(L[n]?.quiz||[]).forEach((q,i)=>out.push({...q,id:`${n}-${i}`,lec:n,t:`${n}|${topicOf(n,q)}`}))}return out}
 function allCards(lecs){const out=[];for(const n of lecs){(L[n]?.cards||[]).forEach((c,i)=>out.push({q:c[0],a:c[1],id:`${n}-${i}`,lec:n}))}return out}
 function lecProgress(n){const l=L[n];if(!l)return 0;const d=l.sections.filter(s=>P.done[`${n}-${s.id}`]).length;return d/l.sections.length}
 const has=k=>READY().some(l=>{const v=L[l.n][k];return Array.isArray(v)?v.length:v&&Object.keys(v).length});
@@ -792,14 +804,23 @@ R.timeline=()=>{
 /* ================= PRACTICE ================= */
 const TN={mcq:'اختيار من متعدد',tf:'صح أم خطأ',fill:'أكمل',match:'وصّل',order:'رتّب',essay:'سؤال مقالي'};
 R.practice=()=>{
-  const ready=READY();const PR=R.practice;PR.lecs=PR.lecs||ready.map(l=>l.n);PR.types=PR.types||Object.keys(TN);
-  const qs=allQ(PR.lecs).filter(q=>PR.types.includes(q.type));
+  const ready=READY();const PR=R.practice;if(PR.sid!==SID){PR.sid=SID;PR.lecs=null;PR.topics=[];PR.open=[]}
+  PR.lecs=PR.lecs||ready.map(l=>l.n);PR.types=PR.types||Object.keys(TN);PR.topics=PR.topics||[];PR.open=PR.open||[];
+  const allR=allQ(ready.map(l=>l.n)),tcount={};allR.forEach(q=>{if(PR.types.includes(q.type))tcount[q.t]=(tcount[q.t]||0)+1});
+  const TOP=PR.topics.length>0;
+  const qs=(TOP?allR.filter(q=>PR.topics.includes(q.t)):allQ(PR.lecs)).filter(q=>PR.types.includes(q.type));
   const wrong=allQ(ready.map(l=>l.n)).filter(q=>P.ans[q.id]&&!P.ans[q.id].ok);
   const per=ready.map(l=>{const a=allQ([l.n]).map(q=>P.ans[q.id]).filter(Boolean);return {l,t:a.length,c:a.filter(x=>x.ok).length,all:L[l.n].quiz.length}});
   $('#v-practice').innerHTML=`<h1>اختبر نفسك</h1><span class="rule"></span>
   <div class="ph"><div>
     <div class="card" style="margin-bottom:14px">
-      <div class="lbl-s">المحاضرات</div><div class="tgrid">${ready.map(l=>`<button class="pill ${PR.lecs.includes(l.n)?'on':''}" data-pl="${l.n}">المحاضرة ${l.ord}</button>`).join('')}</div>
+      <div class="lbl-s">المحاضرات</div><div class="tgrid" style="${TOP?'opacity:.45':''}">${ready.map(l=>`<button class="pill ${PR.lecs.includes(l.n)&&!TOP?'on':''}" data-pl="${l.n}">المحاضرة ${l.ord}</button>`).join('')}</div>
+      <div class="lbl-s">أو اختار مواضيع بعينها</div>
+      <p class="ui muted" style="font-size:13.5px;margin:0 0 8px">افتح المحاضرة واختار موضوع واحد أو أكتر، والأسئلة هتيجي منهم بس.</p>
+      ${TOP?`<div class="row" style="justify-content:space-between;gap:8px;margin-bottom:8px"><b class="ui" style="font-size:14px;color:var(--ink)">اخترت ${PR.topics.length===1?'موضوع واحد':PR.topics.length===2?'موضوعين':ar(PR.topics.length)+(PR.topics.length<11?' مواضيع':' موضوع')}</b><button class="btn ghost sm" id="tclr">الغي اختيار المواضيع</button></div>`:''}
+      ${ready.map(l=>{const sel=PR.topics.filter(k=>k.startsWith(l.n+'|')).length;
+        return `<details class="tdet" data-td="${l.n}" ${sel||PR.open.includes(l.n)?'open':''}><summary><span>المحاضرة ${l.ord}: ${esc(L[l.n].title)}</span>${sel?`<span class="tcnt">${ar(sel)}</span>`:''}</summary>
+        <div class="tgrid">${L[l.n].sections.map(s=>{const k=`${l.n}|${s.id}`,c=tcount[k]||0;return c?`<button class="pill tpill ${PR.topics.includes(k)?'on':''}" data-tp="${k}">${s.title} <small>(${ar(c)})</small></button>`:''}).join('')}</div></details>`}).join('')}
       <div class="lbl-s">نوع الأسئلة</div><div class="tgrid">${Object.entries(TN).map(([k,v])=>`<button class="pill ${PR.types.includes(k)?'on':''}" data-pt="${k}">${v}</button>`).join('')}</div>
       <div class="ui muted" style="font-size:14px">${ar(qs.length)} سؤال متاح بالاختيارات دي</div>
     </div>
@@ -817,12 +838,16 @@ R.practice=()=>{
     <div class="card" style="margin-top:14px"><h3>شكل الأسئلة</h3>
     <p style="margin:6px 0 0;font-size:17px">الأسئلة بتغطي كل أشكال الامتحان: <b>اختيار من متعدد</b>، <b>صح أم خطأ مع التصحيح</b>، <b>أكمل</b>، <b>وصّل</b>، <b>رتّب زمنيًا</b>، و<b>أسئلة مقالية قصيرة</b> بنموذج إجابة تقيّم نفسك عليه. وكل سؤال مكتوب جنبه رقم ${C.unit?'الشريحة في العرض':'الصفحة في الكتاب'}.</p></div>
   </div></div>`;
-  $$('[data-pl]').forEach(b=>b.onclick=()=>{const n=+b.dataset.pl;PR.lecs=PR.lecs.includes(n)?PR.lecs.filter(x=>x!==n):[...PR.lecs,n];if(!PR.lecs.length)PR.lecs=[n];R.practice()});
+  $$('[data-tp]').forEach(b=>b.onclick=()=>{const k=b.dataset.tp;PR.topics=PR.topics.includes(k)?PR.topics.filter(x=>x!==k):[...PR.topics,k];R.practice()});
+  $$('[data-td]').forEach(d=>d.ontoggle=()=>{const n=+d.dataset.td;PR.open=d.open?[...new Set([...PR.open,n])]:PR.open.filter(x=>x!==n)});
+  const tc=$('#tclr');if(tc)tc.onclick=()=>{PR.topics=[];R.practice()};
+  $$('[data-pl]').forEach(b=>b.onclick=()=>{if(TOP){PR.topics=[];PR.lecs=[+b.dataset.pl];R.practice();return}const n=+b.dataset.pl;PR.lecs=PR.lecs.includes(n)?PR.lecs.filter(x=>x!==n):[...PR.lecs,n];if(!PR.lecs.length)PR.lecs=[n];R.practice()});
   $$('[data-pt]').forEach(b=>b.onclick=()=>{const t=b.dataset.pt;PR.types=PR.types.includes(t)?PR.types.filter(x=>x!==t):[...PR.types,t];if(!PR.types.length)PR.types=[t];R.practice()});
   $$('[data-m]').forEach(b=>b.onclick=()=>{const m=b.dataset.m;
-    if(m==='quick')startQuiz({lecs:PR.lecs,types:PR.types,n:10});
-    if(m==='exam')startQuiz({lecs:PR.lecs,types:PR.types,n:25,exam:true,mins:30});
-    if(m==='all')startQuiz({lecs:PR.lecs,types:PR.types,ordered:true});
+    const base={lecs:TOP?ready.map(l=>l.n):PR.lecs,types:PR.types,topics:PR.topics};
+    if(m==='quick')startQuiz({...base,n:10});
+    if(m==='exam')startQuiz({...base,n:25,exam:true,mins:30});
+    if(m==='all')startQuiz({...base,ordered:true});
     if(m==='wrong')startQuiz({list:wrong})});
   const rs=$('#reset');let armed=false;rs.onclick=()=>{if(!armed){armed=true;rs.textContent='متأكد؟ دوس تاني للمسح';return}P.ans={};P.box={};save();toast('اتمسحت النتايج');R.practice()};
 };
@@ -831,7 +856,7 @@ R.practice=()=>{
 let Q=null,timerId=null;
 function stopTimer(){clearInterval(timerId);timerId=null}
 function startQuiz(o){
-  let qs=o.list||allQ(o.lecs).filter(q=>!o.types||o.types.includes(q.type));
+  let qs=o.list||allQ(o.lecs).filter(q=>(!o.types||o.types.includes(q.type))&&(!o.topics?.length||o.topics.includes(q.t)));
   if(!o.ordered)qs=shuffle(qs);
   if(o.exam){ // balanced mix: keep a share of essays small
     const es=qs.filter(q=>q.type==='essay').slice(0,3),rest=qs.filter(q=>q.type!=='essay');qs=shuffle([...rest.slice(0,o.n-es.length),...es]);
@@ -917,7 +942,7 @@ function finish(){
    ${q.type==='mcq'?`<br><span class="muted">الإجابة: </span><b>${q.opts[q.a]}</b>`:''}${q.type==='tf'?`<br><span class="muted">الإجابة: </span><b>${q.a?'صح':'خطأ'}</b>${q.fix?' — '+q.fix:''}`:''}
    ${q.type==='match'?'<br>'+q.pairs.map(p=>`${p[0]} ← <b>${p[1]}</b>`).join(' · '):''}${q.type==='order'?'<br>'+q.items.map((x,i)=>`${ar(i+1)}. ${x}`).join(' · '):''}
    ${q.type==='essay'?'<br><span class="muted">نقط الإجابة: </span>'+q.points.join(' · '):''}</div>`).join('')}</div></div>`;
-  $('#again').onclick=()=>startQuiz({lecs:R.practice.lecs||READY().map(l=>l.n),types:R.practice.types,n:Q.exam?25:10,exam:Q.exam,mins:30});
+  $('#again').onclick=()=>startQuiz({lecs:R.practice.topics?.length?READY().map(l=>l.n):(R.practice.lecs||READY().map(l=>l.n)),types:R.practice.types,topics:R.practice.topics,n:Q.exam?25:10,exam:Q.exam,mins:30});
   window.scrollTo(0,0);
 }
 

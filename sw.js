@@ -1,5 +1,5 @@
 // Offline support: app shell precached; everything else is served from cache and refreshed in the background.
-const VERSION = 'cota-study-v4';
+const VERSION = 'cota-study-v5';
 const SHELL = ['./', 'index.html', 'subjects.json', 'map.json', 'manifest.webmanifest',
   'img/logo-icon.svg', 'img/logo-mark-anim.svg', 'img/papyrus.svg', 'img/rule.svg', 'img/braid-tile.svg',
   'icons/icon-192.png', 'icons/icon-512.png'];
